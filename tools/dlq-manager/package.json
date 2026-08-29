@@ -1,0 +1,21 @@
+{
+  "name": "@order-system/dlq-manager",
+  "version": "1.0.0",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc",
+    "inspect": "ts-node src/cli.ts inspect",
+    "replay": "ts-node src/cli.ts replay"
+  },
+  "dependencies": {
+    "@order-system/shared": "*",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7",
+    "kafkajs": "^2.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}

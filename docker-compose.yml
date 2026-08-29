@@ -1,0 +1,205 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. PostgreSQL (Isolated DB per Service)
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: order_system_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # 2. Apache Kafka (KRaft Mode - No Zookeeper)
+  # ==========================================
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: order_system_kafka
+    restart: always
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+
+  # ==========================================
+  # 3. Kafka Web Management UI
+  # ==========================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: order_system_kafka_ui
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      - kafka
+
+  # ==========================================
+  # 4. OpenTelemetry & Jaeger Tracing
+  # ==========================================
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: order_system_jaeger
+    restart: always
+    ports:
+      - "16686:16686" # Web UI
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  # ==========================================
+  # 5. Order Microservice
+  # ==========================================
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: order_service
+    restart: always
+    command: ["node", "services/order-service/dist/index.js"]
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      ORDER_SERVICE_PORT: 3001
+      ORDER_DB_URL: postgres://postgres:postgres@postgres:5432/order_db
+      KAFKA_BROKERS: kafka:29092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+  # ==========================================
+  # 6. Payment Microservice
+  # ==========================================
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: payment_service
+    restart: always
+    command: ["node", "services/payment-service/dist/index.js"]
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: production
+      PAYMENT_SERVICE_PORT: 3002
+      PAYMENT_DB_URL: postgres://postgres:postgres@postgres:5432/payment_db
+      KAFKA_BROKERS: kafka:29092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+  # ==========================================
+  # 7. Inventory Microservice
+  # ==========================================
+  inventory-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inventory_service
+    restart: always
+    command: ["node", "services/inventory-service/dist/index.js"]
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: production
+      INVENTORY_SERVICE_PORT: 3003
+      INVENTORY_DB_URL: postgres://postgres:postgres@postgres:5432/inventory_db
+      KAFKA_BROKERS: kafka:29092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+  # ==========================================
+  # 8. Notification Microservice
+  # ==========================================
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notification_service
+    restart: always
+    command: ["node", "services/notification-service/dist/index.js"]
+    ports:
+      - "3004:3004"
+    environment:
+      NODE_ENV: production
+      NOTIFICATION_SERVICE_PORT: 3004
+      NOTIFICATION_DB_URL: postgres://postgres:postgres@postgres:5432/notification_db
+      KAFKA_BROKERS: kafka:29092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+  # ==========================================
+  # 9. Monolith Reference Service
+  # ==========================================
+  monolith-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: monolith_service
+    restart: always
+    command: ["node", "services/monolith/dist/index.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      MONOLITH_SERVICE_PORT: 3000
+      MONOLITH_DB_URL: postgres://postgres:postgres@postgres:5432/monolith_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

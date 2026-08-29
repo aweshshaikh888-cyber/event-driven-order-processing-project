@@ -1,0 +1,38 @@
+{
+  "name": "event-driven-microservices",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Event-Driven Order Processing Microservices with Kafka, PostgreSQL, Saga Pattern, Transactional Outbox, and OpenTelemetry",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "tools/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "start:order": "npm run start --workspace=services/order-service",
+    "start:payment": "npm run start --workspace=services/payment-service",
+    "start:inventory": "npm run start --workspace=services/inventory-service",
+    "start:notification": "npm run start --workspace=services/notification-service",
+    "start:monolith": "npm run start --workspace=services/monolith",
+    "dev:order": "npm run dev --workspace=services/order-service",
+    "dev:payment": "npm run dev --workspace=services/payment-service",
+    "dev:inventory": "npm run dev --workspace=services/inventory-service",
+    "dev:notification": "npm run dev --workspace=services/notification-service",
+    "demo:all": "ts-node scripts/demo-suite.ts",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "ts-node scripts/test-e2e.ts",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "dlq:inspect": "ts-node tools/dlq-manager/src/cli.ts inspect",
+    "dlq:replay": "ts-node tools/dlq-manager/src/cli.ts replay"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "dotenv": "^16.4.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}
