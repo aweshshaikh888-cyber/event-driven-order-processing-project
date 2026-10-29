@@ -1,226 +1,202 @@
-﻿export type Language = "en" | "mr";
-
-export type UserRole = "customer" | "owner";
+export type UserRole = 'ADMIN' | 'OFFICER' | 'RESCUE' | 'ANALYST';
 
 export interface User {
-  id: string;
-  name: string;
+  id: number;
+  username: string;
   email: string;
-  phone: string;
-  company?: string;
   role: UserRole;
-  createdAt: string;
-  address?: string;
-  country?: string;
+  full_name?: string;
+  agency?: string;
+  phone?: string;
+  badge_number?: string;
 }
 
-export interface Product {
-  id: string;
-  name: string;
-  nameMr: string;
-  code: string;
-  category: "kraft" | "packaging" | "industrial" | "recycled" | "rolls" | "specialty" | "finished_plates";
-  description: string;
-  descriptionMr: string;
-  material: string;
-  gsm: string;
-  size: string;
-  rollSheetType: "Roll" | "Sheet" | "Pre-cut Blank";
-  moq: string;
-  price: number;
-  inStock: boolean;
-  stockQuantity: number;
-  images: string[];
-  specs: Record<string, string>;
-  featured?: boolean;
-}
+export type DisasterType = 'Earthquake' | 'Flood' | 'Cyclone' | 'Landslide' | 'Fire' | 'Building Collapse';
 
-export interface EarningsRow {
-  period: string;
-  periodMr: string;
-  workDays?: number;
-  productionKg: string | number;
-  incomeInr: string | number;
-}
+export type DamageSeverity = 'No Damage' | 'Low Damage' | 'Moderate Damage' | 'Severe Damage' | 'Critical Damage';
 
-export interface Machine {
-  id: string;
-  name: string;
-  nameMr: string;
-  productCode: string;
-  category: "paper_machinery" | "drone_machinery" | "industrial_equipment";
-  headlineMr?: string;
-  headlineEn?: string;
-  description: string;
-  descriptionMr: string;
-  workingProcessMr?: string;
-  price: number | null; // null if quote only
-  isQuotationOnly: boolean;
-  images: string[];
-  specs: Record<string, string>;
-  specsMr?: Record<string, string>;
-  dimensions?: string;
-  weight?: string;
-  productionCapacity?: string;
-  powerRequirement?: string;
-  automationLevel?: string;
-  materialCompatibility?: string;
-  warranty?: string;
-  availability?: string;
-  features: string[];
-  featuresMr: string[];
-  applications: string[];
-  applicationsMr: string[];
-  installationRequirements?: string;
-  installationRequirementsMr?: string;
-  safetyInfo?: string;
-  safetyInfoMr?: string;
-  earningsChart?: EarningsRow[];
-  earningsNoteMr?: string;
-  importantNoteMr?: string;
-  brochureUrl?: string;
-  manualUrl?: string;
-  featured?: boolean;
-  status: "active" | "maintenance" | "discontinued";
-}
+export type IncidentStatus = 'Reported' | 'Under Review' | 'Confirmed' | 'Response Initiated' | 'Resolved' | 'Closed';
 
-export interface CartItem {
-  product: Product;
-  quantity: number;
-}
+export type PriorityCategory = 'Low' | 'Medium' | 'High' | 'Critical';
 
-export interface QuoteCartItem {
-  id: string;
-  itemType: "machine" | "product";
-  itemId: string;
-  name: string;
-  category: string;
-  image?: string;
-  quantity: number;
-  requirements: string;
-  expectedDelivery: string;
+export interface IncidentTimelineEvent {
+  id: number;
+  incident_id: number;
+  timestamp: string;
+  author: string;
+  action: string;
   notes?: string;
 }
 
-export type OrderStatus =
-  | "Pending"
-  | "Confirmed"
-  | "Processing"
-  | "Manufacturing"
-  | "Ready for Shipment"
-  | "Shipped"
-  | "Delivered"
-  | "Cancelled";
-
-export interface OrderItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
+export interface Incident {
+  id: number;
+  incident_code: string;
+  title: string;
+  disaster_type: DisasterType;
+  severity: DamageSeverity;
+  status: IncidentStatus;
+  description?: string;
+  location_name: string;
+  latitude: number;
+  longitude: number;
+  priority_score: number;
+  priority_category: PriorityCategory;
+  affected_people_est: number;
+  critical_infra_affected: boolean;
+  medical_emergency: boolean;
+  image_url?: string;
+  gradcam_url?: string;
+  ai_confidence?: number;
+  reported_by?: string;
+  reporter_contact?: string;
+  assigned_officer?: string;
+  is_verified: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
-export interface Order {
-  id: string;
-  orderNumber: string;
-  customerId: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  items: OrderItem[];
-  totalAmount: number;
-  orderDate: string;
-  paymentStatus: "Pending" | "Paid" | "Partial";
-  status: OrderStatus;
-  shippingAddress: string;
+export interface AIAnalysisResult {
+  analysis_id: string;
+  filename: string;
+  image_url: string;
+  gradcam_url: string;
+  predicted_class: DamageSeverity;
+  confidence: number;
+  confidence_percentage: number;
+  severity_level: string;
+  disaster_type: string;
+  location_name: string;
+  latitude: number;
+  longitude: number;
+  class_probabilities: Record<string, number>;
+  feature_metrics: {
+    mean_edge_intensity: number;
+    spatial_entropy: number;
+    high_frequency_debris_index: number;
+    structural_coherence: number;
+  };
+  recommended_actions: string[];
+  structural_safety_disclaimer: string;
+  model_version: string;
+  model_name: string;
+  execution_time_ms: number;
+  timestamp: string;
+  is_demo_calibrated: boolean;
+  db_id?: number;
 }
 
-export type QuoteStatus =
-  | "Pending"
-  | "Under Review"
-  | "Quotation Sent"
-  | "Accepted"
-  | "Rejected";
+export type TeamStatus = 'Available' | 'Assigned' | 'En Route' | 'On Site' | 'Completed';
 
-export interface QuoteRequest {
-  id: string;
-  quoteNumber: string;
-  customerId: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  companyName: string;
-  items: QuoteCartItem[];
-  estimatedPrice: number | null;
-  status: QuoteStatus;
-  createdAt: string;
-  notes?: string;
-  deliveryLeadTime?: string;
-  ownerReply?: string;
-  quotePdfUrl?: string;
-}
-
-export interface Inquiry {
-  id: string;
+export interface RescueTeam {
+  id: number;
   name: string;
-  companyName: string;
-  email: string;
-  phone: string;
-  country: string;
-  requirementType: string;
-  productOrMachine: string;
-  quantity: string;
-  message: string;
-  documentUrl?: string;
-  status: "New" | "In Progress" | "Replied";
-  reply?: string;
-  createdAt: string;
+  specialization: string;
+  lead_name: string;
+  contact_phone: string;
+  member_count: number;
+  status: TeamStatus;
+  latitude?: number;
+  longitude?: number;
+  equipment_summary?: string;
+  vehicle_info?: string;
 }
 
-export interface TechnicalPaper {
-  id: string;
-  title: string;
-  titleMr: string;
-  documentType:
-    | "Technical Datasheet"
-    | "Machine Manual"
-    | "Brochure"
-    | "Research Paper"
-    | "Installation Guide"
-    | "Maintenance Manual"
-    | "Product Catalogue";
-  category: "paper_machines" | "paper_products" | "drone_equipment" | "automation";
-  relatedEntity: string;
-  version: string;
-  publishedDate: string;
-  fileSize: string;
-  downloadUrl: string;
-  description: string;
-  descriptionMr?: string;
+export interface HospitalShelter {
+  id: number;
+  name: string;
+  facility_type: 'Hospital' | 'Temporary Shelter' | 'Relief Camp' | 'Emergency Clinic';
+  address: string;
+  latitude: number;
+  longitude: number;
+  contact_phone: string;
+  total_capacity: number;
+  available_capacity: number;
+  services: string;
+  is_verified: boolean;
+  status: string;
+  distance_km?: number;
 }
 
-export interface NotificationItem {
-  id: string;
-  userId: string;
-  role: "customer" | "owner" | "all";
-  title: string;
-  titleMr?: string;
-  message: string;
-  messageMr?: string;
-  date: string;
-  read: boolean;
-  type: "order" | "quote" | "inventory" | "system";
-}
-
-export interface InventoryItem {
-  id: string;
-  productId: string;
-  productName: string;
-  sku: string;
-  category: string;
-  availableQuantity: number;
-  reservedQuantity: number;
+export interface EmergencyResource {
+  id: number;
+  name: string;
+  category: 'Medical' | 'Vehicles' | 'Rescue Gear' | 'Food & Water' | 'Shelter';
+  total_quantity: number;
+  available_quantity: number;
   unit: string;
-  lowStockThreshold: number;
-  status: "in_stock" | "low_stock" | "out_of_stock";
+  warehouse_location: string;
+  min_threshold: number;
+  status: 'Adequate' | 'Low Stock' | 'Critical';
+}
+
+export interface ResourceRequest {
+  id: number;
+  resource_id: number;
+  resource_name: string;
+  category: string;
+  unit: string;
+  requested_quantity: number;
+  urgency: string;
+  status: string;
+  requested_by: string;
+  incident_code: string;
+  created_at: string;
+}
+
+export interface EmergencyNotification {
+  id: number;
+  title: string;
+  message: string;
+  severity: string;
+  target_channel: string;
+  target_region: string;
+  is_test_mode: boolean;
+  sent_by: string;
+  acknowledged: boolean;
+  recipients_count: number;
+  delivery_status: string;
+  created_at: string;
+}
+
+export interface WeatherAlert {
+  id: number;
+  location: string;
+  weather_condition: string;
+  temperature: number;
+  wind_speed_kmh: number;
+  humidity: number;
+  rainfall_mm: number;
+  risk_level: string;
+  warning_title: string;
+  official_advisory: string;
+  is_authoritative: boolean;
+  timestamp: string;
+}
+
+export interface AuditLog {
+  id: number;
+  username: string;
+  action: string;
+  entity_type: string;
+  entity_id?: string;
+  details?: string;
+  ip_address: string;
+  timestamp: string;
+}
+
+export interface Drone {
+  id: string;
+  name: string;
+  status: string;
+  battery_pct: number;
+  altitude_m: number;
+  speed_kmh: number;
+  latitude: number;
+  longitude: number;
+  heading_deg: number;
+  camera_mode: string;
+  connection_signal: string;
+  mission: string;
+  feed_url: string;
+  is_simulated: boolean;
 }
